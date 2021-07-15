@@ -1,10 +1,13 @@
 /* A standard layout for the Dactyl Manuform 5x6 Keyboard */
-
 #include QMK_KEYBOARD_H
 
 enum layers {
 _QWERTY,
 _FUNCTION,
+};
+
+enum custom_keycodes {
+    BSP_DEL = SAFE_RANGE,
 };
 
 #define FUNCTION MO(_FUNCTION)
@@ -17,8 +20,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LGUI,KC_A   ,KC_S   ,KC_D   ,KC_F   ,KC_G   ,                         KC_H   ,KC_J   ,KC_K   ,KC_L   ,KC_SCLN,KC_QUOT,
         KC_LCTL,KC_Z   ,KC_X   ,KC_C   ,KC_V   ,KC_B   ,                         KC_N   ,KC_M   ,KC_COMM,KC_DOT ,KC_SLSH,KC_BSLASH,
                         KC_LALT,KC_GRV,                                                          KC_LBRC,KC_RBRC,
-                                                KC_LSFT,KC_SPC  ,        KC_BSPC,FUNCTION,
-                                                KC_ENT ,KC_HOME ,        KC_END ,KC_DEL ,
+                                                KC_LSFT,KC_SPC  ,        BSP_DEL,FUNCTION,
+                                                KC_ENT ,KC_HOME ,        KC_END ,_______,
                                                 _______,KC_APP  ,        _______,_______
   ),
 
@@ -33,3 +36,30 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                                 _______,_______,         _______,_______
   ),
 };
+
+static bool shift_held = false;
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_LSFT:
+            shift_held = record->event.pressed;
+            return true;
+            break;
+        case BSP_DEL:
+            if (record->event.pressed) {
+                // Do something when pressed
+                if (shift_held){
+                    register_code(KC_DEL);
+                } else {
+                    register_code(KC_BSPC);
+                }
+            } else {
+                // Do something else when release
+                unregister_code(KC_DEL);
+                unregister_code(KC_BSPC);
+            }
+            return false; // Skip all further processing of this key
+        default:
+            return true; // Process all other keycodes normally
+    }
+}
