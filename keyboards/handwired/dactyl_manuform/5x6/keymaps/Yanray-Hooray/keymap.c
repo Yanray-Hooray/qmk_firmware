@@ -20,8 +20,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LGUI,KC_A   ,KC_S   ,KC_D   ,KC_F   ,KC_G   ,                         KC_H   ,KC_J   ,KC_K   ,KC_L   ,KC_SCLN,KC_QUOT,
         KC_LCTL,KC_Z   ,KC_X   ,KC_C   ,KC_V   ,KC_B   ,                         KC_N   ,KC_M   ,KC_COMM,KC_DOT ,KC_SLSH,KC_BSLASH,
                         KC_LALT,KC_GRV,                                                          KC_LBRC,KC_RBRC,
-                                                KC_LSFT,KC_SPC  ,        BSP_DEL,FUNCTION,
-                                                KC_ENT ,KC_HOME ,        KC_END ,_______,
+                                                KC_LSFT,KC_SPC ,         KC_BSPC,FUNCTION,
+                                                KC_ENT ,KC_HOME ,        KC_END ,KC_ENT,
                                                 _______,KC_APP  ,        _______,_______
   ),
 
@@ -37,29 +37,45 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 };
 
-static bool shift_held = false;
-
+// Initialize variable holding the binary
+// representation of active modifiers.
+uint8_t mod_state;
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // Store the current modifier state in the variable for later reference
+    mod_state = get_mods();
     switch (keycode) {
-        case KC_LSFT:
-            shift_held = record->event.pressed;
-            return true;
-            break;
-        case BSP_DEL:
-            if (record->event.pressed) {
-                // Do something when pressed
-                if (shift_held){
-                    register_code(KC_DEL);
-                } else {
-                    register_code(KC_BSPC);
-                }
-            } else {
-                // Do something else when release
-                unregister_code(KC_DEL);
-                unregister_code(KC_BSPC);
+
+    case KC_BSPC:
+        {
+        // Initialize a boolean variable that keeps track
+        // of the delete key status: registered or not?
+        static bool delkey_registered;
+        if (record->event.pressed) {
+            // Detect the activation of either shift keys
+            if (mod_state & MOD_MASK_SHIFT) {
+                // First temporarily canceling both shifts so that
+                // shift isn't applied to the KC_DEL keycode
+                del_mods(MOD_MASK_SHIFT);
+                register_code(KC_DEL);
+                // Update the boolean variable to reflect the status of KC_DEL
+                delkey_registered = true;
+                // Reapplying modifier state so that the held shift key(s)
+                // still work even after having tapped the Backspace/Delete key.
+                set_mods(mod_state);
+                return false;
             }
-            return false; // Skip all further processing of this key
-        default:
-            return true; // Process all other keycodes normally
+        } else { // on release of KC_BSPC
+            // In case KC_DEL is still being sent even after the release of KC_BSPC
+            if (delkey_registered) {
+                unregister_code(KC_DEL);
+                delkey_registered = false;
+                return false;
+            }
+        }
+        // Let QMK process the KC_BSPC keycode as usual outside of shift
+        return true;
     }
-}
+
+    }
+    return true;
+};
