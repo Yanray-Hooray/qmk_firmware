@@ -6,9 +6,6 @@ _QWERTY,
 _FUNCTION,
 };
 
-enum custom_keycodes {
-    BSP_DEL = SAFE_RANGE,
-};
 
 #define FUNCTION MO(_FUNCTION)
 
@@ -22,7 +19,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                         KC_LALT,KC_GRV,                                                          KC_LBRC,KC_RBRC,
                                                 KC_LSFT,KC_SPC ,         KC_BSPC,FUNCTION,
                                                 KC_ENT ,KC_HOME ,        KC_END ,KC_ENT,
-                                                _______,KC_APP  ,        _______,_______
+                                                SH_TT  ,KC_APP  ,        _______,_______
   ),
 
   [_FUNCTION] = LAYOUT_5x6(
